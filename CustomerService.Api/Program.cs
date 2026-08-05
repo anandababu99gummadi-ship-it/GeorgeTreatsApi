@@ -52,11 +52,12 @@ namespace CustomerService.Api
             //Console.WriteLine($"SmtpUsername value: {app.Configuration["SmtpUsername"]}");
             //Console.WriteLine($"Connection String in use: {app.Configuration.GetConnectionString("DefaultConnection")}");
 
+            app.UseSwagger();
+            app.UseSwaggerUI();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
+
                 app.UseDeveloperExceptionPage();
             }
             else
