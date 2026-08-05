@@ -20,6 +20,19 @@ namespace CustomerService.Api
 
             // Add services to the container.
 
+            // Key Vault  configuration  adding
+            var keyVaultUrl = new Uri("https://georgetreats-keyvault.vault.azure.net/");
+
+            var credential = builder.Environment.IsDevelopment()
+                ? new Azure.Identity.DefaultAzureCredential(new Azure.Identity.DefaultAzureCredentialOptions
+                {
+                    ExcludeManagedIdentityCredential = true
+                })
+                : new Azure.Identity.DefaultAzureCredential();
+
+            builder.Configuration.AddAzureKeyVault(keyVaultUrl, credential);
+
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
@@ -36,21 +49,45 @@ namespace CustomerService.Api
             builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
+            //Console.WriteLine($"SmtpUsername value: {app.Configuration["SmtpUsername"]}");
+            //Console.WriteLine($"Connection String in use: {app.Configuration.GetConnectionString("DefaultConnection")}");
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler(errorApp =>
+                {
+                    errorApp.Run(async context =>
+                    {
+                        var exceptionHandlerFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+                        var exception = exceptionHandlerFeature?.Error;
+
+                        if (exception is FluentValidation.ValidationException validationException)
+                        {
+                            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                            context.Response.ContentType = "application/json";
+                            var errors = validationException.Errors.Select(e => e.ErrorMessage);
+                            await context.Response.WriteAsJsonAsync(new { errors });
+                        }
+                        else
+                        {
+                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                            context.Response.ContentType = "application/json";
+                            await context.Response.WriteAsJsonAsync(new { message = "An unexpected error occurred." });
+                        }
+                    });
+                });
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }
