@@ -14,10 +14,12 @@ namespace CustomerService.Application.Features.Customers.Queries.GetAllCustomers
         public class GetAllCustomersQueryHandler : IRequestHandler<GetAllCustomersQuery, List<CustomerDto>>
         {
             private readonly ICustomerRepository _customerRepository;
+            private readonly IBlobStorageService _blobStorageService;
 
-            public GetAllCustomersQueryHandler(ICustomerRepository customerRepository)
+            public GetAllCustomersQueryHandler(ICustomerRepository customerRepository, IBlobStorageService blobStorageService)
             {
                 _customerRepository = customerRepository;
+                _blobStorageService = blobStorageService;
             }
 
             public async Task<List<CustomerDto>> Handle(GetAllCustomersQuery request, CancellationToken cancellationToken)
@@ -35,7 +37,10 @@ namespace CustomerService.Application.Features.Customers.Queries.GetAllCustomers
                     State = customer.Location.State,
                     ZipCode = customer.Location.ZipCode,
                     Country = customer.Location.Country,
-                    IsActive = customer.IsActive
+                    IsActive = customer.IsActive,
+                    ProfilePictureUrl = !string.IsNullOrEmpty(customer.ProfilePictureFileName)
+                                        ? _blobStorageService.GenerateReadSasUrl(customer.ProfilePictureFileName)
+                                        :null
                 }).ToList();
             }
         }
