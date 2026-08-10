@@ -6,11 +6,14 @@ using CustomerService.Application.Features.Customers.Queries.GetAllCustomers;
 using CustomerService.Application.Features.Customers.Queries.GetCustomerById;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using CustomerService.Application.Features.Customers.Commands.UploadCustomerCsv;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CustomerService.Api
 {
     namespace CustomerService.Api.Controllers
     {
+        [Authorize]
         [ApiController]
         [Route("api/[controller]")]
         public class CustomerController : ControllerBase
@@ -98,6 +101,27 @@ namespace CustomerService.Api
                 var blobUrl = await _mediator.Send(command);
 
                 return Ok(new { ProfilePictureUrl = blobUrl });
+            }
+
+            // Bulk Users data - Need to insert this data into Sql Database from the CSV files.
+            [HttpPost("bulk-upload")]
+            public async Task<IActionResult> BulkUploadCustomers(IFormFile file)
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest("No file uploaded.");
+
+                if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+                    return BadRequest("Only CSV files are allowed.");
+
+                using var stream = file.OpenReadStream();
+                var command = new UploadCustomerCsvCommand
+                {
+                    FileStream = stream,
+                    FileName = $"{Guid.NewGuid()}_{file.FileName}"
+                };
+
+                var blobUrl = await _mediator.Send(command);
+                return Ok(new { Message = "CSV uploaded, processing will begin shortly.", BlobPath = blobUrl });
             }
         }
     }

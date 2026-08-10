@@ -11,10 +11,13 @@ namespace CustomerService.Application.Features.Customers.Commands.UpdateCustomer
     public class UpdateCustomerCommandHandler : IRequestHandler<UpdateCustomerCommand, bool>
     {
         private readonly ICustomerRepository _customerRepository;
+        private readonly ICacheService _cacheService;
 
-        public UpdateCustomerCommandHandler(ICustomerRepository customerRepository)
+        public UpdateCustomerCommandHandler(ICustomerRepository customerRepository, ICacheService cacheService)
         {
             _customerRepository = customerRepository;
+            _cacheService = cacheService;
+
         }
 
         public async Task<bool> Handle(UpdateCustomerCommand request, CancellationToken cancellationToken)
@@ -27,6 +30,7 @@ namespace CustomerService.Application.Features.Customers.Commands.UpdateCustomer
             customer.UpdateDetails(request.Name, request.Phone, request.Location);
 
             await _customerRepository.UpdateAsync(customer);
+            await _cacheService.RemoveAsync("all-customers", cancellationToken);
 
             return true;
         }

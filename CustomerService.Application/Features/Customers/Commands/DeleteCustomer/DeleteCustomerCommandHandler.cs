@@ -11,10 +11,12 @@ namespace CustomerService.Application.Features.Customers.Commands.DeleteCustomer
     public class DeleteCustomerCommandHandler : IRequestHandler<DeleteCustomerCommand, bool>
     {
         private readonly ICustomerRepository _customerRepository;
+        private readonly ICacheService _cacheService;
 
-        public DeleteCustomerCommandHandler(ICustomerRepository customerRepository)
+        public DeleteCustomerCommandHandler(ICustomerRepository customerRepository, ICacheService cacheService)
         {
             _customerRepository = customerRepository;
+            _cacheService = cacheService;
         }
 
         public async Task<bool> Handle(DeleteCustomerCommand request, CancellationToken cancellationToken)
@@ -27,6 +29,7 @@ namespace CustomerService.Application.Features.Customers.Commands.DeleteCustomer
             customer.Deactivate();
 
             await _customerRepository.UpdateAsync(customer);
+            await _cacheService.RemoveAsync("all-customers", cancellationToken);
 
             return true;
         }

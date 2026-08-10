@@ -17,13 +17,16 @@ namespace CustomerService.Tests.Handlers
         private readonly Mock<ICustomerRepository> _mockRepository;
         private readonly CreateCustomerCommandHandler _handler;
         private readonly Mock<IServiceBusSender> _mockServiceBusSender;
+        private readonly Mock<ICacheService> _mockCacheService;
 
         public CreateCustomerCommandHandlerTests()
         {
             // Arrange (common setup, To use for every Test)
             _mockRepository = new Mock<ICustomerRepository>();
             _mockServiceBusSender = new Mock<IServiceBusSender>();
-            _handler = new CreateCustomerCommandHandler(_mockRepository.Object, _mockServiceBusSender.Object);
+            _mockCacheService = new Mock<ICacheService>();
+            _handler = new CreateCustomerCommandHandler(_mockRepository.Object, _mockServiceBusSender.Object, _mockCacheService.Object);
+
         }
 
         [Fact]
